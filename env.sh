@@ -1,0 +1,1 @@
+GR_DIR_BASE=$SCRATCH/ci
