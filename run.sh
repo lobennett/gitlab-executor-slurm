@@ -9,7 +9,7 @@ function file_watch
 }
 
 # directory where all run content will live
-DIR_JOB=$CUSTOM_ENV_CI_BUILDS_DIR/$USER/$CUSTOM_ENV_CI_BUILD_ID
+DIR_JOB=$CUSTOM_ENV_CI_BUILDS_DIR/$GITLAB_USER_LOGIN/$CUSTOM_ENV_CI_PROJECT_NAME/$CUSTOM_ENV_CI_JOB_STAGE/$CUSTOM_ENV_CI_JOB_NAME/$CUSTOM_ENV_CI_JOB_ID
 
 RUN_STAGE="${@: -1}" # last argument is the run stage
 SCRIPT_RUN="${@:(-2):1}" # second to last argument is the run script
