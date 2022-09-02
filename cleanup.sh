@@ -7,4 +7,4 @@ SCRIPT_CLEANUP="${@:(-2):1}" # second to last argument is the run script
 
 $SCRIPT_CLEANUP
 
-rm -f $DIR_JOB/!(*.log)
+rm -f "$DIR_JOB"/!(*.log)

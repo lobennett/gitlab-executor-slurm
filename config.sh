@@ -8,7 +8,7 @@ cat << JSON
     "builds_dir" : "$GR_DIR_BASE/builds",
     "cache_dir" : "$GR_DIR_BASE/cache",
     "driver" : {
-        "name" : "new driver",
+        "name" : "Slurm driver",
         "version" : "v01"
     }
 }
