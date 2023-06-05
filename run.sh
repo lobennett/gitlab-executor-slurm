@@ -25,7 +25,7 @@ then
     mv "$DIR_JOB"/script. "$DIR_JOB"/$RUN_STAGE # rename script to something more meaningful
 
     # submit slurm job with -W (wait, makes sbatch blocking)
-    sbatch -W $CUSTOM_ENV_SCHEDULER_PARAMETERS -o "$DIR_JOB"/out.log -e "$DIR_JOB"/err.log "$DIR_JOB"/$RUN_STAGE &
+    sbatch -W $CUSTOM_ENV_SLURM_PARAMETERS -o "$DIR_JOB"/out.log -e "$DIR_JOB"/err.log "$DIR_JOB"/$RUN_STAGE &
     PID_SBATCH=$! # get sbatch PID
 
     file_watch "$DIR_JOB"/out.log O
