@@ -27,13 +27,25 @@ then
     # submit slurm job with -W (wait, makes sbatch blocking)
     if [ -z "$CUSTOM_ENV_CI_JOB_IMAGE" ]
     then
+      # no container image specified, just run directly without apptainer/singularity
       sbatch -W $CUSTOM_ENV_SLURM_PARAMETERS -o "$DIR_JOB"/out.log -e "$DIR_JOB"/err.log "$DIR_JOB"/$RUN_STAGE &
     else
-      if [ -z "$CUSTOM_ENV_IMAGE_PATH" ]
+
+      # container specified
+
+      if [ -n "$CUSTOM_ENV_IMAGE_PATH" ]
       then
-        IMAGE_PATH="$HOME/.containers"
-      else
+        # custom image path is set
         IMAGE_PATH="$CUSTOM_ENV_IMAGE_PATH"
+      else
+        if [ -n "$APPTAINER_CACHEDIR" ]
+        then
+          # apptainer cachedir is set, use it
+          IMAGE_PATH="$APPTAINER_CACHEDIR/container"
+        else
+          # no image path and no apptainer cache, put in home
+          IMAGE_PATH="$HOME/.container"
+        fi
       fi
 
       CONTAINER=$(basename $CUSTOM_ENV_CI_JOB_IMAGE)
