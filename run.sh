@@ -22,7 +22,7 @@ then
 
     cd /tmp # go to tmp, avoid being stuck in some gitlab host tmp space
     cp "$SCRIPT_RUN" "$DIR_JOB" # copy script to output directory
-    mv "$DIR_JOB"/script. "$DIR_JOB"/$RUN_STAGE # rename script to something more meaningful
+    mv "$DIR_JOB"/$(basename "$SCRIPT_RUN") "$DIR_JOB"/$RUN_STAGE # rename script to something more meaningful
 
     # submit slurm job with -W (wait, makes sbatch blocking)
     if [ -z "$CUSTOM_ENV_CI_JOB_IMAGE" ]
@@ -48,12 +48,12 @@ then
         fi
       fi
 
-      CONTAINER=$(basename $CUSTOM_ENV_CI_JOB_IMAGE)
+      CONTAINER=$(basename $CUSTOM_ENV_CI_JOB_IMAGE | tr ':/' '_')
 
       SBATCH_SCRIPT="$DIR_JOB"/sbatch_script
 
       echo "#!/bin/sh" >> "$SBATCH_SCRIPT"
-      echo singularity exec $CUSTOM_ENV_APPTAINER_PARAMETERS $IMAGE_PATH/${CONTAINER}_latest.sif "$DIR_JOB"/$RUN_STAGE >> "$SBATCH_SCRIPT"
+      echo singularity exec $CUSTOM_ENV_APPTAINER_PARAMETERS $IMAGE_PATH/${CONTAINER}.sif "$DIR_JOB"/$RUN_STAGE >> "$SBATCH_SCRIPT"
 
       #echo -W $CUSTOM_ENV_SLURM_PARAMETERS -o "$DIR_JOB"/out.log -e "$DIR_JOB"/err.log singularity exec $CUSTOM_ENV_APPTAINER_PARAMETERS $IMAGE_PATH/${CONTAINER}_latest.sif "$DIR_JOB"/$RUN_STAGE &
       sbatch -W $CUSTOM_ENV_SLURM_PARAMETERS -o "$DIR_JOB"/out.log -e "$DIR_JOB"/err.log "$SBATCH_SCRIPT" &
