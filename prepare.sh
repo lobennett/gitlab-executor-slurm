@@ -1,33 +1,27 @@
 #!/bin/bash
-
-# This script prepares the environment for a custom executor job.
-# Its primary role is to ensure the necessary container image is available.
-
-# Exit immediately if a command exits with a non-zero status.
+# This script checks for a cached container image and pulls it if not found.
 set -e
 
-# Define the base directory for the image cache.
-if [ -n "$CUSTOM_ENV_IMAGE_PATH" ]; then
-  # Use custom image path if set
-  IMAGE_PATH="$CUSTOM_ENV_IMAGE_PATH"
-elif [ -n "$APPTAINER_CACHEDIR" ]; then
-  # Use apptainer cachedir if set
-  IMAGE_PATH="$APPTAINER_CACHEDIR/container"
-else
-  # Default to a directory in the user's home
-  IMAGE_PATH="$HOME/.container"
-fi
-
-# Ensure the image cache directory exists.
-mkdir -p "$IMAGE_PATH"
+SHARED_IMAGE_DIR="/home/groups/russpold/singularity_images"
+mkdir -p "$SHARED_IMAGE_DIR"
 
 # Check if a container image is specified for the job.
 if [ ! -z "$CUSTOM_ENV_CI_JOB_IMAGE" ]; then
-  echo "Pulling container image: $CUSTOM_ENV_CI_JOB_IMAGE"
-  # Use --force to prevent errors if the image already exists in the cache.
-  apptainer pull --force --dir "$IMAGE_PATH" "docker://$CUSTOM_ENV_CI_JOB_IMAGE"
+  # Construct the expected path for the SIF file.
+  SANITIZED_IMAGE_NAME=$(echo "$CUSTOM_ENV_CI_JOB_IMAGE" | tr ':/' '_')
+  SIF_FILE="$SHARED_IMAGE_DIR/${SANITIZED_IMAGE_NAME}.sif"
+
+  # Check if the required SIF file exists in the shared directory.
+  if [ ! -f "$SIF_FILE" ]; then
+    # If the file does not exist, attempt to pull it from the registry.
+    echo "Cached SIF file not found. Attempting to pull 'docker://$CUSTOM_ENV_CI_JOB_IMAGE'..."
+    apptainer pull --dir "$SHARED_IMAGE_DIR" "docker://$CUSTOM_ENV_CI_JOB_IMAGE"
+    echo "Pull successful."
+  else
+    # If the file exists, use the cached version.
+    echo "Found cached container image: $SIF_FILE"
+  fi
 fi
 
 echo "Preparation stage complete."
-
 exit 0
