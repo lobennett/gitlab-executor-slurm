@@ -17,7 +17,7 @@ RUN_STAGE=$2
 PIDS=()
 
 # if the main execution script, send to slurm queue
-if [[ $RUN_STAGE == "step_script" ]]; then
+if [[ $RUN_STAGE == "build_script" ]]; then
 
     cd /tmp # go to tmp, avoid being stuck in some gitlab host tmp space
     cp "$SCRIPT_RUN" "$DIR_JOB" # copy script to output directory
