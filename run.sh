@@ -10,6 +10,7 @@ function file_watch
 
 # directory where all run content will live
 DIR_JOB=$CUSTOM_ENV_CI_BUILDS_DIR/$GITLAB_USER_LOGIN/$CUSTOM_ENV_CI_PROJECT_NAME/$CUSTOM_ENV_CI_JOB_STAGE/$CUSTOM_ENV_CI_JOB_NAME/$CUSTOM_ENV_CI_JOB_ID
+mkdir -p "$DIR_JOB"
 
 SCRIPT_RUN=$1
 RUN_STAGE=$2
@@ -17,7 +18,7 @@ RUN_STAGE=$2
 PIDS=()
 
 # if the main execution script, send to slurm queue
-if [[ $RUN_STAGE == "build_script" ]]; then
+if [[ $RUN_STAGE == "step_script" ]]; then
 
     cd /tmp # go to tmp, avoid being stuck in some gitlab host tmp space
     cp "$SCRIPT_RUN" "$DIR_JOB" # copy script to output directory
