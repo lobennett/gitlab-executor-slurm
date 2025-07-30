@@ -49,7 +49,7 @@ if [[ $RUN_STAGE == "step_script" ]]; then
       SBATCH_SCRIPT="$DIR_JOB"/sbatch_script
 
       echo "#!/bin/sh" >> "$SBATCH_SCRIPT"
-      echo "apptainer exec $CUSTOM_ENV_APPTAINER_PARAMETERS \"$SIF_FILE\" \"$DIR_JOB\"/$RUN_STAGE" >> "$SBATCH_SCRIPT"
+      echo "apptainer exec --cleanenv $CUSTOM_ENV_APPTAINER_PARAMETERS \"$SIF_FILE\" \"$DIR_JOB\"/$RUN_STAGE" >> "$SBATCH_SCRIPT"
       sbatch -W $CUSTOM_ENV_SLURM_PARAMETERS -o "$DIR_JOB"/out.log -e "$DIR_JOB"/err.log "$SBATCH_SCRIPT" &
     fi
     PID_SBATCH=$! # get sbatch PID
