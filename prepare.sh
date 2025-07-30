@@ -1,34 +1,33 @@
 #!/bin/bash
 
-DIR_JOB=$CUSTOM_ENV_CI_BUILDS_DIR/$GITLAB_USER_LOGIN/$CUSTOM_ENV_CI_PROJECT_NAME/$CUSTOM_ENV_CI_JOB_STAGE/$CUSTOM_ENV_CI_JOB_NAME/$CUSTOM_ENV_CI_JOB_ID
-SCRIPT_PREPARE="${@:(-2):1}" # second to last argument is the run script
+# This script prepares the environment for a custom executor job.
+# Its primary role is to ensure the necessary container image is available.
 
-mkdir -p "$DIR_JOB"
+# Exit immediately if a command exits with a non-zero status.
+set -e
 
-if [ -n "$CUSTOM_ENV_IMAGE_PATH" ]
-then
-  # custom image path is set
+# Define the base directory for the image cache.
+if [ -n "$CUSTOM_ENV_IMAGE_PATH" ]; then
+  # Use custom image path if set
   IMAGE_PATH="$CUSTOM_ENV_IMAGE_PATH"
+elif [ -n "$APPTAINER_CACHEDIR" ]; then
+  # Use apptainer cachedir if set
+  IMAGE_PATH="$APPTAINER_CACHEDIR/container"
 else
-  if [ -n "$APPTAINER_CACHEDIR" ]
-  then
-    # apptainer cachedir is set, use it
-    IMAGE_PATH="$APPTAINER_CACHEDIR/container"
-  else
-    # no image path and no apptainer cache, put in home
-    IMAGE_PATH="$HOME/.container"
-  fi
+  # Default to a directory in the user's home
+  IMAGE_PATH="$HOME/.container"
 fi
 
-if [ ! -d "$IMAGE_PATH" ]
-then
-  mkdir -p "$IMAGE_PATH"
+# Ensure the image cache directory exists.
+mkdir -p "$IMAGE_PATH"
+
+# Check if a container image is specified for the job.
+if [ ! -z "$CUSTOM_ENV_CI_JOB_IMAGE" ]; then
+  echo "Pulling container image: $CUSTOM_ENV_CI_JOB_IMAGE"
+  # Use --force to prevent errors if the image already exists in the cache.
+  apptainer pull --force --dir "$IMAGE_PATH" "docker://$CUSTOM_ENV_CI_JOB_IMAGE"
 fi
 
-# check for container image
-if [ ! -z "$CUSTOM_ENV_CI_JOB_IMAGE" ]
-then
-  singularity pull --dir "$IMAGE_PATH" docker://$CUSTOM_ENV_CI_JOB_IMAGE
-fi
+echo "Preparation stage complete."
 
-$SCRIPT_PREPARE
+exit 0

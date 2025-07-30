@@ -17,29 +17,23 @@ RUN_STAGE=$2
 PIDS=()
 
 # if the main execution script, send to slurm queue
-if [[ $RUN_STAGE == "build_script" ]]
-then
+if [[ $RUN_STAGE == "step_script" ]]; then
 
     cd /tmp # go to tmp, avoid being stuck in some gitlab host tmp space
     cp "$SCRIPT_RUN" "$DIR_JOB" # copy script to output directory
-    mv "$DIR_JOB"/script. "$DIR_JOB"/$RUN_STAGE # rename script to something more meaningful
+    mv "$DIR_JOB"/$(basename "$SCRIPT_RUN") "$DIR_JOB"/$RUN_STAGE # rename script to something more meaningful
 
     # submit slurm job with -W (wait, makes sbatch blocking)
-    if [ -z "$CUSTOM_ENV_CI_JOB_IMAGE" ]
-    then
-      # no container image specified, just run directly without apptainer/singularity
+    if [ -z "$CUSTOM_ENV_CI_JOB_IMAGE" ]; then
+      # no container image specified, just run directly without apptainer
       sbatch -W $CUSTOM_ENV_SLURM_PARAMETERS -o "$DIR_JOB"/out.log -e "$DIR_JOB"/err.log "$DIR_JOB"/$RUN_STAGE &
     else
-
       # container specified
-
-      if [ -n "$CUSTOM_ENV_IMAGE_PATH" ]
-      then
+      if [ -n "$CUSTOM_ENV_IMAGE_PATH" ]; then
         # custom image path is set
         IMAGE_PATH="$CUSTOM_ENV_IMAGE_PATH"
       else
-        if [ -n "$APPTAINER_CACHEDIR" ]
-        then
+        if [ -n "$APPTAINER_CACHEDIR" ]; then
           # apptainer cachedir is set, use it
           IMAGE_PATH="$APPTAINER_CACHEDIR/container"
         else
@@ -48,14 +42,14 @@ then
         fi
       fi
 
-      CONTAINER=$(basename $CUSTOM_ENV_CI_JOB_IMAGE)
+      # Sanitize name to replace ":" and "/" with "_"
+      SANITIZED_IMAGE_NAME=$(echo "$CUSTOM_ENV_CI_JOB_IMAGE" | tr ':/' '_')
+      SIF_FILE="$IMAGE_PATH/${SANITIZED_IMAGE_NAME}.sif"
 
       SBATCH_SCRIPT="$DIR_JOB"/sbatch_script
 
       echo "#!/bin/sh" >> "$SBATCH_SCRIPT"
-      echo singularity exec $CUSTOM_ENV_APPTAINER_PARAMETERS $IMAGE_PATH/${CONTAINER}_latest.sif "$DIR_JOB"/$RUN_STAGE >> "$SBATCH_SCRIPT"
-
-      #echo -W $CUSTOM_ENV_SLURM_PARAMETERS -o "$DIR_JOB"/out.log -e "$DIR_JOB"/err.log singularity exec $CUSTOM_ENV_APPTAINER_PARAMETERS $IMAGE_PATH/${CONTAINER}_latest.sif "$DIR_JOB"/$RUN_STAGE &
+      echo "apptainer exec $CUSTOM_ENV_APPTAINER_PARAMETERS \"$SIF_FILE\" \"$DIR_JOB\"/$RUN_STAGE" >> "$SBATCH_SCRIPT"
       sbatch -W $CUSTOM_ENV_SLURM_PARAMETERS -o "$DIR_JOB"/out.log -e "$DIR_JOB"/err.log "$SBATCH_SCRIPT" &
     fi
     PID_SBATCH=$! # get sbatch PID
@@ -66,12 +60,8 @@ then
     PIDS+=($PID_FILE_WATCH)
 
     wait $PID_SBATCH # wait on sbatch to finish
-    # need to switch to sbatch --parsable to get job id, then monitoring job output via:
-    # sacct -o state,exitcode -n -p -D -j <job id>
-    # this method will allow for job cancelling
 
-    for P in "${PIDS[@]}"
-    do
+    for P in "${PIDS[@]}"; do
         kill $P # kill all file logs
     done
 
